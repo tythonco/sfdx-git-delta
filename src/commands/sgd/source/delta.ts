@@ -7,6 +7,7 @@ const {
   REPO_DEFAULT_VALUE,
   SOURCE_DEFAULT_VALUE,
   OUTPUT_DEFAULT_VALUE,
+  EXCLUDE_API_VERSION_DEFAULT_VALUE,
 } = require('../../../utils/cliHelper')
 
 // Initialize Messages with the current plugin directory
@@ -62,6 +63,11 @@ export default class SourceDeltaGenerate extends SfdxCommand {
       char: 'a',
       description: messages.getMessage('apiVersionFlag'),
     }),
+    'exclude-api-version': flags.boolean({
+      char: 'x',
+      description: messages.getMessage('excludeApiVersionFlag'),
+      default: EXCLUDE_API_VERSION_DEFAULT_VALUE,
+    }),
     'generate-delta': flags.boolean({
       char: 'd',
       description: messages.getMessage('deltaFlag'),
@@ -92,6 +98,7 @@ export default class SourceDeltaGenerate extends SfdxCommand {
         ignore: this.flags.ignore,
         ignoreDestructive: this.flags['ignore-destructive'],
         apiVersion: this.flags['api-version'],
+        excludeApiVersion: this.flags['exclude-api-version'],
         repo: this.flags.repo,
         ignoreWhitespace: this.flags['ignore-whitespace'],
         generateDelta: this.flags['generate-delta'],

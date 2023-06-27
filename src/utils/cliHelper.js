@@ -136,8 +136,12 @@ class CLIHelper {
   }
 
   async _handleDefault() {
-    await this._getApiVersion()
-    await this._apiVersionDefault()
+    if (!this.config.excludeApiVersion) {
+      await this._getApiVersion()
+      await this._apiVersionDefault()
+    } else {
+      this.config.apiVersion = undefined
+    }
   }
 
   async _getApiVersion() {
@@ -195,5 +199,6 @@ class CLIHelper {
   static OUTPUT_DEFAULT_VALUE = './output'
   static SOURCE_DEFAULT_VALUE = './'
   static REPO_DEFAULT_VALUE = './'
+  static EXCLUDE_API_VERSION_DEFAULT_VALUE = false
 }
 module.exports = CLIHelper

@@ -331,162 +331,185 @@ describe(`test if the application`, () => {
     beforeAll(async () => {
       latestAPIVersionSupported = await getLatestSupportedVersion()
     })
-    describe('when apiVersion parameter is set with supported value', () => {
-      test.each([46, 52, 55])(
-        'config.apiVersion (%s) equals the parameter',
-        async version => {
-          // Arrange
-          const work = {
-            ...testConfig,
-            config: {
-              ...testConfig.config,
-              apiVersion: version,
-            },
-            warnings: [],
-          }
-          const cliHelper = new CLIHelper(work)
-
-          // Act
-          await cliHelper._handleDefault()
-
-          // Assert
-          expect(work.config.apiVersion).toEqual(version)
-          expect(work.warnings.length).toEqual(0)
-        }
-      )
-    })
-    describe('when apiVersion parameter is set with unsupported value', () => {
-      test.each(['NaN', 40, 55.1, 'awesome', '1000000000', 0])(
-        `config.apiVersion (%s) equals the latest version `,
-        async version => {
-          // Arrange
-          const work = {
-            ...testConfig,
-            config: {
-              ...testConfig.config,
-              apiVersion: version,
-            },
-            warnings: [],
-          }
-          const cliHelper = new CLIHelper(work)
-
-          // Act
-          await cliHelper._handleDefault()
-
-          // Assert
-          expect(work.config.apiVersion).toEqual(latestAPIVersionSupported)
-          expect(work.warnings.length).toEqual(1)
-        }
-      )
-    })
-
-    describe('when apiVersion parameter is not set', () => {
-      describe('when sfdx-project.json file exist', () => {
-        describe('when "sourceApiVersion" attribute is set with supported value', () => {
-          test.each(['46', '52', '55', '46.0', '52.0', '55.0'])(
-            'config.apiVersion (%s) equals the "sourceApiVersion" attribute',
-            async version => {
-              // Arrange
-              fs.__setMockFiles({
-                ...mockFiles,
-                'sfdx-project.json': `{"sourceApiVersion":${version}}`,
-              })
-
-              const work = {
-                ...testConfig,
-                config: {
-                  ...testConfig.config,
-                  apiVersion: undefined,
-                },
-                warnings: [],
-              }
-              const cliHelper = new CLIHelper(work)
-
-              // Act
-              await cliHelper._handleDefault()
-
-              // Assert
-              expect(work.config.apiVersion).toEqual(+version)
-              expect(work.warnings.length).toEqual(0)
+    
+    for(const excludeApiVersion of [false, true]) {
+      describe('when apiVersion parameter is set with supported value', () => {
+        test.each([46, 52, 55])(
+          'config.apiVersion (%s) equals the parameter',
+          async version => {
+            // Arrange
+            const work = {
+              ...testConfig,
+              config: {
+                ...testConfig.config,
+                apiVersion: version,
+                excludeApiVersion,
+              },
+              warnings: [],
             }
-          )
-        })
-        describe('when "sourceApiVersion" attribute is set with unsupported value', () => {
-          test.each([NaN, '40', 'awesome', 1000000000, ''])(
-            'config.apiVersion (%s) equals the latest version',
-            async version => {
-              // Arrange
-              fs.__setMockFiles({
-                ...mockFiles,
-                'sfdx-project.json': `{"sourceApiVersion":"${version}"}`,
-              })
-
-              const work = {
-                ...testConfig,
-                config: {
-                  ...testConfig.config,
-                  apiVersion: undefined,
-                },
-                warnings: [],
-              }
-              const cliHelper = new CLIHelper(work)
-
-              // Act
-              await cliHelper._handleDefault()
-
-              // Assert
-              expect(work.config.apiVersion).toEqual(latestAPIVersionSupported)
-              expect(work.warnings.length).toEqual(1)
+            const cliHelper = new CLIHelper(work)
+  
+            // Act
+            await cliHelper._handleDefault()
+  
+            // Assert
+            expect(work.config.apiVersion).toEqual(
+              excludeApiVersion ? undefined : version
+            )
+            expect(work.warnings.length).toEqual(0)
+          }
+        )
+      })
+      describe('when apiVersion parameter is set with unsupported value', () => {
+        test.each(['NaN', 40, 55.1, 'awesome', '1000000000', 0])(
+          `config.apiVersion (%s) equals the latest version `,
+          async version => {
+            // Arrange
+            const work = {
+              ...testConfig,
+              config: {
+                ...testConfig.config,
+                apiVersion: version,
+                excludeApiVersion,
+              },
+              warnings: [],
             }
-          )
-        })
-
-        test('when "sourceApiVersion" attribute is not set', async () => {
-          // Arrange
-          fs.__setMockFiles({
-            ...mockFiles,
-            'sfdx-project.json': `{}`,
+            const cliHelper = new CLIHelper(work)
+  
+            // Act
+            await cliHelper._handleDefault()
+  
+            // Assert
+            expect(work.config.apiVersion).toEqual(
+              excludeApiVersion ? undefined : latestAPIVersionSupported
+            )
+            expect(work.warnings.length).toEqual(excludeApiVersion ? 0 : 1)
+          }
+        )
+      })
+  
+      describe('when apiVersion parameter is not set', () => {
+        describe('when sfdx-project.json file exist', () => {
+          describe('when "sourceApiVersion" attribute is set with supported value', () => {
+            test.each(['46', '52', '55', '46.0', '52.0', '55.0'])(
+              'config.apiVersion (%s) equals the "sourceApiVersion" attribute',
+              async version => {
+                // Arrange
+                fs.__setMockFiles({
+                  ...mockFiles,
+                  'sfdx-project.json': `{"sourceApiVersion":${version}}`,
+                })
+  
+                const work = {
+                  ...testConfig,
+                  config: {
+                    ...testConfig.config,
+                    apiVersion: undefined,
+                    excludeApiVersion,
+                  },
+                  warnings: [],
+                }
+                const cliHelper = new CLIHelper(work)
+  
+                // Act
+                await cliHelper._handleDefault()
+  
+                // Assert
+                expect(work.config.apiVersion).toEqual(
+                  excludeApiVersion ? undefined : +version
+                )
+                expect(work.warnings.length).toEqual(0)
+              }
+            )
           })
-
-          const work = {
-            ...testConfig,
-            config: {
-              ...testConfig.config,
-              apiVersion: undefined,
-            },
-            warnings: [],
-          }
-          const cliHelper = new CLIHelper(work)
-
-          // Act
-          await cliHelper._handleDefault()
-
-          // Assert
-          expect(work.config.apiVersion).toEqual(latestAPIVersionSupported)
-          expect(work.warnings.length).toEqual(1)
+          describe('when "sourceApiVersion" attribute is set with unsupported value', () => {
+            test.each([NaN, '40', 'awesome', 1000000000, ''])(
+              'config.apiVersion (%s) equals the latest version',
+              async version => {
+                // Arrange
+                fs.__setMockFiles({
+                  ...mockFiles,
+                  'sfdx-project.json': `{"sourceApiVersion":"${version}"}`,
+                })
+  
+                const work = {
+                  ...testConfig,
+                  config: {
+                    ...testConfig.config,
+                    apiVersion: undefined,
+                    excludeApiVersion,
+                  },
+                  warnings: [],
+                }
+                const cliHelper = new CLIHelper(work)
+  
+                // Act
+                await cliHelper._handleDefault()
+  
+                // Assert
+                expect(work.config.apiVersion).toEqual(
+                  excludeApiVersion ? undefined : latestAPIVersionSupported
+                )
+                expect(work.warnings.length).toEqual(excludeApiVersion ? 0 : 1)
+              }
+            )
+          })
+  
+          describe('when "sourceApiVersion" attribute is not set', () => {
+            test('config.apiVersion equals the latest version', async () => {
+              // Arrange
+              fs.__setMockFiles({
+                ...mockFiles,
+                'sfdx-project.json': `{}`,
+              })
+  
+              const work = {
+                ...testConfig,
+                config: {
+                  ...testConfig.config,
+                  apiVersion: undefined,
+                  excludeApiVersion,
+                },
+                warnings: [],
+              }
+              const cliHelper = new CLIHelper(work)
+  
+              // Act
+              await cliHelper._handleDefault()
+  
+              // Assert
+              expect(work.config.apiVersion).toEqual(
+                excludeApiVersion ? undefined : latestAPIVersionSupported
+              )
+              expect(work.warnings.length).toEqual(excludeApiVersion ? 0 : 1)
+            })
+          })
+        })
+        describe('when sfdx-project.json file does not exist', () => {
+          test('config.apiVersion equals the latest version', async () => {
+            // Arrange
+            const work = {
+              ...testConfig,
+              config: {
+                ...testConfig.config,
+                apiVersion: undefined,
+                excludeApiVersion,
+              },
+              warnings: [],
+            }
+            const cliHelper = new CLIHelper(work)
+  
+            // Act
+            await cliHelper._handleDefault()
+  
+            // Assert
+            expect(work.config.apiVersion).toEqual(
+              excludeApiVersion ? undefined : latestAPIVersionSupported
+            )
+            expect(work.warnings.length).toEqual(0)
+          })
         })
       })
-      describe('when sfdx-project.json file does not exist', () => {
-        test('config.apiVersion equals the latest version', async () => {
-          // Arrange
-          const work = {
-            ...testConfig,
-            config: {
-              ...testConfig.config,
-              apiVersion: undefined,
-            },
-            warnings: [],
-          }
-          const cliHelper = new CLIHelper(work)
-
-          // Act
-          await cliHelper._handleDefault()
-
-          // Assert
-          expect(work.config.apiVersion).toEqual(latestAPIVersionSupported)
-          expect(work.warnings.length).toEqual(0)
-        })
-      })
-    })
+    }
   })
 })
